@@ -213,6 +213,7 @@ internal class RealCall private constructor(
     ): RealCall {
       // Safely publish the Call instance to the EventListener.
       return RealCall(client, originalRequest, forWebSocket).apply {
+        // RealCall与Transmitter一对一关系
         transmitter = Transmitter(client, this)
       }
     }

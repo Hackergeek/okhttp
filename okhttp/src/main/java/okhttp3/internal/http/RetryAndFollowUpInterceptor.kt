@@ -99,6 +99,7 @@ class RetryAndFollowUpInterceptor(private val client: OkHttpClient) : Intercepto
 
       val exchange = response.exchange
       val route = exchange?.connection()?.route()
+      // 是否需要重定向, 如果是，则构建重定向请求
       val followUp = followUpRequest(response, route)
 
       if (followUp == null) {
@@ -117,7 +118,7 @@ class RetryAndFollowUpInterceptor(private val client: OkHttpClient) : Intercepto
       if (transmitter.hasExchange()) {
         exchange?.detachWithViolence()
       }
-
+      // 是否超过最大重定向次数
       if (++followUpCount > MAX_FOLLOW_UPS) {
         throw ProtocolException("Too many follow-up requests: $followUpCount")
       }
@@ -143,12 +144,14 @@ class RetryAndFollowUpInterceptor(private val client: OkHttpClient) : Intercepto
     if (!client.retryOnConnectionFailure) return false
 
     // We can't send the request body again.
+    // 请求的body已经发出，不进行重试
     if (requestSendStarted && requestIsOneShot(e, userRequest)) return false
 
     // This exception is fatal.
     if (!isRecoverable(e, requestSendStarted)) return false
 
     // No more routes to attempt.
+    // 没有更多的路由可供尝试
     if (!transmitter.canRetry()) return false
     // For failure recovery, use the same route selector with a new connection.
     return true
