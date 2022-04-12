@@ -130,6 +130,7 @@ class CacheStrategy internal constructor(
       val candidate = computeCandidate()
 
       // We're forbidden from using the network and the cache is insufficient.
+      // 缓存策略设置为禁止使用网络，并且缓存为空
       if (candidate.networkRequest != null && request.cacheControl.onlyIfCached) {
         return CacheStrategy(null, null)
       }

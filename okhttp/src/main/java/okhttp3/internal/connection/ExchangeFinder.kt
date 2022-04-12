@@ -154,6 +154,7 @@ class ExchangeFinder(
       hasStreamFailure = false // This is a fresh attempt.
 
       releasedConnection = transmitter.connection
+      // 检查transmitter保存的connection是否需要释放
       toClose = if (transmitter.connection != null && transmitter.connection!!.noNewExchanges) {
         transmitter.releaseConnectionNoEvents()
       } else {
@@ -168,13 +169,16 @@ class ExchangeFinder(
 
       if (result == null) {
         // Attempt to get a connection from the pool.
+        // 1. 从连接池中获取RealConnection（Socket的包装类），routes为null
         if (connectionPool.transmitterAcquirePooledConnection(address, transmitter, null, false)) {
           foundPooledConnection = true
           result = transmitter.connection
         } else if (nextRouteToTry != null) {
+          // 2. 如果连接池中没有，则看看有没有下一个Route可以尝试，这里只有重试的情况会走进来
           selectedRoute = nextRouteToTry
           nextRouteToTry = null
         } else if (retryCurrentRoute()) {
+          // 3. 如果设置了使用当前Route重试，则继续使用当前的Route
           selectedRoute = transmitter.connection!!.route()
         }
       }
@@ -188,6 +192,7 @@ class ExchangeFinder(
       eventListener.connectionAcquired(call, result!!)
     }
     if (result != null) {
+      // 4. 如果前面发现ConnectionPool或者transmitter中有可以复用的Connection，这里就直接返回了
       // If we found an already-allocated or pooled connection, we're done.
       return result!!
     }
@@ -196,6 +201,8 @@ class ExchangeFinder(
     var newRouteSelection = false
     if (selectedRoute == null && (routeSelection == null || !routeSelection!!.hasNext())) {
       newRouteSelection = true
+      // 5. 通过routeSelector获取新的Route来进行Connection的建立，
+      // 6. 获取route的过程其实就是域名解析的过程
       routeSelection = routeSelector.next()
     }
 
@@ -207,6 +214,7 @@ class ExchangeFinder(
         // Now that we have a set of IP addresses, make another attempt at getting a connection from
         // the pool. This could match due to connection coalescing.
         routes = routeSelection!!.routes
+        // 7. 从连接池中获取RealConnection（Socket的包装类），routes不为null
         if (connectionPool.transmitterAcquirePooledConnection(
                 address, transmitter, routes, false)) {
           foundPooledConnection = true
@@ -221,6 +229,7 @@ class ExchangeFinder(
 
         // Create a connection and assign it to this allocation immediately. This makes it possible
         // for an asynchronous cancel() to interrupt the handshake we're about to do.
+        // 8. 创建RealConnection
         result = RealConnection(connectionPool, selectedRoute!!)
         connectingConnection = result
       }
@@ -233,6 +242,7 @@ class ExchangeFinder(
     }
 
     // Do TCP + TLS handshakes. This is a blocking operation.
+    // 建立TCP+TLS连接
     result!!.connect(
         connectTimeout,
         readTimeout,
@@ -259,7 +269,9 @@ class ExchangeFinder(
         // that case we will retry the route we just successfully connected with.
         nextRouteToTry = selectedRoute
       } else {
+        // 将连接成功的RealConnection放入连接池
         connectionPool.put(result!!)
+        // 给transmitter的connection成员变量赋值
         transmitter.acquireConnectionNoEvents(result!!)
       }
     }

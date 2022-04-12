@@ -58,6 +58,7 @@ class CacheInterceptor(internal val cache: Cache?) : Interceptor {
     }
 
     // If we're forbidden from using the network and the cache is insufficient, fail.
+    // 如果缓存策略设置了禁止使用网络，并且缓存为空，构建错误为504的Response对象返回。
     if (networkRequest == null && cacheResponse == null) {
       return Response.Builder()
           .request(chain.request())
@@ -71,6 +72,7 @@ class CacheInterceptor(internal val cache: Cache?) : Interceptor {
     }
 
     // If we don't need the network, we're done.
+    // 如果缓存策略设置禁止使用网络，并且缓存不为空，直接返回缓存
     if (networkRequest == null) {
       return cacheResponse!!.newBuilder()
           .cacheResponse(stripBody(cacheResponse))
@@ -90,6 +92,7 @@ class CacheInterceptor(internal val cache: Cache?) : Interceptor {
     // If we have a cache response too, then we're doing a conditional get.
     if (cacheResponse != null) {
       if (networkResponse?.code == HTTP_NOT_MODIFIED) {
+        // 当缓存存在时，如果返回的Response状态码为304，则使用缓存的Response
         val response = cacheResponse.newBuilder()
             .headers(combine(cacheResponse.headers, networkResponse.headers))
             .sentRequestAtMillis(networkResponse.sentRequestAtMillis)

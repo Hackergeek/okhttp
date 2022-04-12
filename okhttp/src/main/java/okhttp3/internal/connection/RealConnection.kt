@@ -166,6 +166,7 @@ class RealConnection(
 
     while (true) {
       try {
+        // 通过http代理了https请求，有一个特殊的协议交换过程
         if (route.requiresTunnel()) {
           connectTunnel(connectTimeout, readTimeout, writeTimeout, call, eventListener)
           if (rawSocket == null) {
@@ -173,8 +174,10 @@ class RealConnection(
             break
           }
         } else {
+          // 建立socket连接
           connectSocket(connectTimeout, readTimeout, call, eventListener)
         }
+        // 如果前面判断是https请求，这里就是https的tls建立过程
         establishProtocol(connectionSpecSelector, pingIntervalMillis, call, eventListener)
         eventListener.connectEnd(call, route.socketAddress, route.proxy, protocol)
         break

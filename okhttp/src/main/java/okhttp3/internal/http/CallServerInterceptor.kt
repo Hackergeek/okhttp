@@ -32,7 +32,7 @@ class CallServerInterceptor(private val forWebSocket: Boolean) : Interceptor {
     val request = realChain.request()
     val requestBody = request.body
     val sentRequestMillis = System.currentTimeMillis()
-
+    // 向服务器发送request header
     exchange.writeRequestHeaders(request)
 
     var responseHeadersStarted = false
@@ -79,6 +79,7 @@ class CallServerInterceptor(private val forWebSocket: Boolean) : Interceptor {
       exchange.responseHeadersStart()
     }
     if (responseBuilder == null) {
+      // 读取Response Header响应头
       responseBuilder = exchange.readResponseHeaders(false)!!
     }
     var response = responseBuilder
@@ -108,6 +109,7 @@ class CallServerInterceptor(private val forWebSocket: Boolean) : Interceptor {
           .body(EMPTY_RESPONSE)
           .build()
     } else {
+      // 读取ResponseBody 响应体
       response.newBuilder()
           .body(exchange.openResponseBody(response))
           .build()
