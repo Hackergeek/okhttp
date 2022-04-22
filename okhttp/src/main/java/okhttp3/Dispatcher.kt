@@ -110,12 +110,16 @@ class Dispatcher constructor() {
 
   internal fun enqueue(call: AsyncCall) {
     synchronized(this) {
+      // 添加到等待队列
       readyAsyncCalls.add(call)
 
       // Mutate the AsyncCall so that it shares the AtomicInteger of an existing running call to
       // the same host.
+      // 等待队列和运行队列中所有Call实例callsPerHost值是共享的
       if (!call.get().forWebSocket) {
+        // 从等待队列和运行队列中查找相同的Host的Call对象
         val existingCall = findExistingCallWithHost(call.host())
+        // 将call实例的callsPerHost值更新为existingCall实例的callsPerHost值
         if (existingCall != null) call.reuseCallsPerHostFrom(existingCall)
       }
     }
@@ -161,14 +165,17 @@ class Dispatcher constructor() {
     val executableCalls = mutableListOf<AsyncCall>()
     val isRunning: Boolean
     synchronized(this) {
+      // 从等待队列中取出请求，添加到运行队列
       val i = readyAsyncCalls.iterator()
       while (i.hasNext()) {
         val asyncCall = i.next()
-
+        // 运行队列最大容量是64
         if (runningAsyncCalls.size >= this.maxRequests) break // Max capacity.
+        // 同一时间只允许五个请求访问同一个HOST
         if (asyncCall.callsPerHost().get() >= this.maxRequestsPerHost) continue // Host max capacity.
 
         i.remove()
+        // callsPerHost自增
         asyncCall.callsPerHost().incrementAndGet()
         executableCalls.add(asyncCall)
         runningAsyncCalls.add(asyncCall)
@@ -191,6 +198,7 @@ class Dispatcher constructor() {
 
   /** Used by `AsyncCall#run` to signal completion. */
   internal fun finished(call: AsyncCall) {
+    // callsPerHost自减
     call.callsPerHost().decrementAndGet()
     finished(runningAsyncCalls, call)
   }

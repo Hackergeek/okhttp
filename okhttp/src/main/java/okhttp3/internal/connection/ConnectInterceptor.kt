@@ -21,6 +21,7 @@ import okhttp3.Response
 import okhttp3.internal.http.RealInterceptorChain
 import java.io.IOException
 
+// 建立与目标服务器的连接，接着处理下一个拦截器
 /** Opens a connection to the target server and proceeds to the next interceptor. */
 object ConnectInterceptor : Interceptor {
 

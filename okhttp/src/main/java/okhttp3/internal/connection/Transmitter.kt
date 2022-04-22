@@ -46,6 +46,10 @@ import javax.net.ssl.SSLSocketFactory
  * the other streams sharing its connection. But if the TLS handshake is still in progress then
  * canceling may break the entire connection.
  */
+/**
+ * 发射器
+ *
+ */
 class Transmitter(
   private val client: OkHttpClient,
   private val call: Call

@@ -114,6 +114,9 @@ class CallServerInterceptor(private val forWebSocket: Boolean) : Interceptor {
           .body(exchange.openResponseBody(response))
           .build()
     }
+    /**
+     * 连接不复用
+     */
     if ("close".equals(response.request.header("Connection"), ignoreCase = true) ||
         "close".equals(response.header("Connection"), ignoreCase = true)) {
       exchange.noNewExchangesOnConnection()

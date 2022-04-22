@@ -131,6 +131,7 @@ internal class RealCall private constructor(
     override fun run() {
       threadName("OkHttp ${redactedUrl()}") {
         var signalledCallback = false
+        // 超时任务
         transmitter.timeoutEnter()
         try {
           val response = getResponseWithInterceptorChain()
@@ -174,11 +175,11 @@ internal class RealCall private constructor(
   fun getResponseWithInterceptorChain(): Response {
     // Build a full stack of interceptors.
     val interceptors = mutableListOf<Interceptor>()
-    interceptors += client.interceptors
-    interceptors += RetryAndFollowUpInterceptor(client)
+    interceptors += client.interceptors //自定义的拦截器
+    interceptors += RetryAndFollowUpInterceptor(client) // 重试和重定向拦截器
     interceptors += BridgeInterceptor(client.cookieJar)
-    interceptors += CacheInterceptor(client.cache)
-    interceptors += ConnectInterceptor
+    interceptors += CacheInterceptor(client.cache)//缓存拦截器
+    interceptors += ConnectInterceptor //连接拦截器
     if (!forWebSocket) {
       interceptors += client.networkInterceptors
     }
